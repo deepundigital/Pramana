@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sutra-Net Forensics | AI Cyber Investigation Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <!-- Cytoscape for interactive Knowledge Graph -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">⚡</div>
+        <div class="brand-text">
+          <h1>SUTRA-NET</h1>
+          <span class="badge-sub">SUTRAM 2026 EDITION</span>
+        </div>
+      </div>
+
+      <nav class="nav-links">
+        <button class="nav-item active" data-tab="overview">
+          <span class="icon">📊</span> Overview &amp; Ingest
+        </button>
+        <button class="nav-item" data-tab="network">
+          <span class="icon">🌐</span> NetSpectra C2 Hunter
+        </button>
+        <button class="nav-item" data-tab="mobile">
+          <span class="icon">📱</span> Chitra Mobile &amp; UPI
+        </button>
+        <button class="nav-item" data-tab="graph">
+          <span class="icon">🕸️</span> Temporal Entity Graph
+        </button>
+        <button class="nav-item" data-tab="sql">
+          <span class="icon">⚡</span> Parquet SQL Console
+        </button>
+        <button class="nav-item" data-tab="compliance">
+          <span class="icon">⚖️</span> BSA Sec 63 Legal Vault
+        </button>
+        <a href="/deck" target="_blank" class="nav-item pitch-deck-link">
+          <span class="icon">🎯</span> 12-Slide Pitch Deck ↗
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="compliance-badge">
+          <span>🏛️ Indian Legal Standard</span>
+          <strong>BSA 2023 Sec 63 Compliant</strong>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Bar -->
+      <header class="topbar">
+        <div class="case-info">
+          <span class="label">ACTIVE CASE:</span>
+          <span class="case-id">CASE-2026-SUTRAM-01</span>
+          <span class="status-pill status-live">EVIDENCE VERIFIED</span>
+        </div>
+        <div class="top-actions">
+          <button id="btn-ingest-samples" class="btn btn-primary">
+            🚀 Ingest Demo Evidence
+          </button>
+          <a href="/deck" target="_blank" class="btn btn-secondary">
+            📽️ Present Pitch Deck
+          </a>
+        </div>
+      </header>
+
+      <!-- TAB 1: OVERVIEW & INGESTION -->
+      <section id="tab-overview" class="tab-pane active">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-label">INGESTION SPEED</span>
+            <span class="stat-val text-cyan">175x Faster</span>
+            <span class="stat-meta">Apache Parquet vs Grep/SQLite</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">ENCRYPTED THREATS</span>
+            <span class="stat-val text-red" id="stat-malicious-count">1 C2 Beacon</span>
+            <span class="stat-meta">Cobalt Strike TLS 1.3 Profiled</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">MOBILE FRAUD DETECTED</span>
+            <span class="stat-val text-amber" id="stat-mobile-flagged">4 Extortions</span>
+            <span class="stat-meta">Hinglish Intent + UPI VPAs</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">CHAIN OF CUSTODY</span>
+            <span class="stat-val text-emerald">100% Intact</span>
+            <span class="stat-meta">SHA-256 + SHA-3 Cryptographic Ledger</span>
+          </div>
+        </div>
+
+        <div class="card mt-4">
+          <div class="card-header">
+            <h2>Immutable Acquisition Ledger (BSA Sec 63 Requirement)</h2>
+            <span class="badge">Real-Time Ledger</span>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Artifact</th>
+                  <th>Acquisition Time (UTC)</th>
+                  <th>SHA-256 Checksum</th>
+                  <th>File Size</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="ledger-table-body">
+                <tr>
+                  <td><code>sample_network.pcap</code></td>
+                  <td>2026-10-18 22:30:12</td>
+                  <td><code class="hash-code">4a7d3b8e91f0c2a5d8b7e6f3a2c1d0e9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f4e3</code></td>
+                  <td>142.8 KB</td>
+                  <td><span class="status-pill status-verified">VERIFIED</span></td>
+                </tr>
+                <tr>
+                  <td><code>sample_msgstore.db</code></td>
+                  <td>2026-10-18 22:30:15</td>
+                  <td><code class="hash-code">9c8f2b1a0d3e5f7a9c8b7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e8d7c6b</code></td>
+                  <td>48.0 KB</td>
+                  <td><span class="status-pill status-verified">VERIFIED</span></td>
+                </tr>
+                <tr>
+                  <td><code>sample_syslog.log</code></td>
+                  <td>2026-10-18 22:30:18</td>
+                  <td><code class="hash-code">1f2e3d4c5b6a7f8e9d0c1b2a3f4e5d6c7b8a9f0e1d2c3b4a5f6e7d8c9b0a1f2e</code></td>
+                  <td>1.2 KB</td>
+                  <td><span class="status-pill status-verified">VERIFIED</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: NETWORK C2 HUNTER -->
+      <section id="tab-network" class="tab-pane">
+        <div class="card">
+          <div class="card-header">
+            <h2>NetSpectra-ML: Encrypted Traffic Anomaly &amp; C2 Hunter</h2>
+            <span class="badge badge-cyan">TLS 1.3 Profiling Without Decryption</span>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Flow Key</th>
+                  <th>Packets</th>
+                  <th>Avg Interval (s)</th>
+                  <th>Jitter (s)</th>
+                  <th>Anomaly Score</th>
+                  <th>Classification</th>
+                  <th>MITRE ATT&amp;CK</th>
+                </tr>
+              </thead>
+              <tbody id="flows-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: MOBILE & HINGLISH FRAUD -->
+      <section id="tab-mobile" class="tab-pane">
+        <div class="card">
+          <div class="card-header">
+            <h2>Chitra-NLP: Indigenous Mobile Forensics &amp; Hinglish Triage</h2>
+            <span class="badge badge-amber">Offline Extortion &amp; UPI Extractor</span>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Sender</th>
+                  <th>Timestamp</th>
+                  <th>Message Snippet</th>
+                  <th>Extracted UPIs</th>
+                  <th>Intent Category</th>
+                  <th>Risk Score</th>
+                </tr>
+              </thead>
+              <tbody id="mobile-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: KNOWLEDGE GRAPH -->
+      <section id="tab-graph" class="tab-pane">
+        <div class="card">
+          <div class="card-header">
+            <h2>Temporal Knowledge Graph: Mule Accounts &amp; C2 Correlation</h2>
+            <span class="badge badge-emerald">NetworkX Multi-Entity Engine</span>
+          </div>
+          <div id="cy-container" style="height: 520px; width: 100%; background: #0B1120; border-radius: 8px;"></div>
+        </div>
+      </section>
+
+      <!-- TAB 5: PARQUET SQL CONSOLE -->
+      <section id="tab-sql" class="tab-pane">
+        <div class="card">
+          <div class="card-header">
+            <h2>Columnar Parquet SQL Console (DuckDB Zero-Copy Engine)</h2>
+            <span class="badge badge-cyan">Sub-Second Execution</span>
+          </div>
+          <div class="sql-input-box">
+            <textarea id="sql-query-input" rows="4" class="sql-editor">SELECT flow_id, total_bytes, duration_sec, mean_delta_sec, jitter_sec 
+FROM read_parquet('data/parquet_store/flows/*.parquet') 
+ORDER BY total_bytes DESC 
+LIMIT 20;</textarea>
+            <div class="sql-actions mt-2">
+              <button id="btn-run-sql" class="btn btn-primary">⚡ Execute Query</button>
+              <span id="query-exec-time" class="exec-time-label">Ready</span>
+            </div>
+          </div>
+          <div class="table-wrapper mt-3">
+            <table class="data-table" id="sql-results-table">
+              <thead id="sql-results-head"></thead>
+              <tbody id="sql-results-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 6: BSA SECTION 63 LEGAL VAULT -->
+      <section id="tab-compliance" class="tab-pane">
+        <div class="card">
+          <div class="card-header">
+            <h2>Bharatiya Sakshya Adhiniyam, 2023 (Section 63) Legal Certificate Vault</h2>
+            <span class="badge badge-emerald">Statutory Courtroom Admissibility</span>
+          </div>
+          <div class="cert-panel">
+            <p class="cert-desc">
+              Section 63 of the BSA (replacing Section 65B of the Indian Evidence Act, 1872) mandates automated,
+              tamper-proof certification of electronic records produced by computer systems.
+            </p>
+            <div class="cert-form-grid">
+              <div>
+                <label>Case Number:</label>
+                <input type="text" id="cert-case-id" class="input-field" value="CASE-2026-SUTRAM-01">
+              </div>
+              <div>
+                <label>Certifying Examiner:</label>
+                <input type="text" id="cert-examiner" class="input-field" value="Inspector Rajesh Kumar (Cyber Cell)">
+              </div>
+              <div>
+                <label>Investigating Agency:</label>
+                <input type="text" id="cert-agency" class="input-field" value="State Cyber Crime Investigation Unit / NFSU">
+              </div>
+            </div>
+            <button id="btn-generate-cert" class="btn btn-emerald mt-3">
+              ⚖️ Generate &amp; Download Signed Section 63 PDF Certificate
+            </button>
+            <div id="cert-download-container" class="mt-3"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

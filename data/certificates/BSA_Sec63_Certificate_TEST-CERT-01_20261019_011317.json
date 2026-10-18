@@ -1,0 +1,21 @@
+{
+  "statute": "Bharatiya Sakshya Adhiniyam, 2023 (Section 63)",
+  "former_statute_reference": "Indian Evidence Act, 1872 (Section 65B)",
+  "case_id": "TEST-CERT-01",
+  "agency": "State Forensic Science Laboratory",
+  "examiner": "Inspector Rajesh Kumar",
+  "generated_utc": "2026-10-18T19:43:17.209190+00:00",
+  "evidence": {
+    "filename": "sample_network.pcap",
+    "file_size_bytes": 10240,
+    "hashes": {
+      "sha256": "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+      "sha3_256": "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+    },
+    "acquired_utc": "2026-10-18T22:30:00Z"
+  },
+  "findings": [
+    "Confirmed Cobalt Strike C2 beacon on port 8443."
+  ],
+  "affirmation": "I hereby certify that the electronic record described herein was produced by a computer system during the period over which the computer was used regularly to store or process information, and that throughout the material part of the said period, the computer was operating properly. The cryptographic hashes computed upon initial acquisition match the current artifact integrity."
+}

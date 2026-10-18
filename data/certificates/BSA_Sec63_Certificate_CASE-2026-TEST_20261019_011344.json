@@ -1,0 +1,24 @@
+{
+  "statute": "Bharatiya Sakshya Adhiniyam, 2023 (Section 63)",
+  "former_statute_reference": "Indian Evidence Act, 1872 (Section 65B)",
+  "case_id": "CASE-2026-TEST",
+  "agency": "State FSL",
+  "examiner": "Inspector Rajesh Kumar",
+  "generated_utc": "2026-10-18T19:43:44.867081+00:00",
+  "evidence": {
+    "filename": "sample_network.pcap",
+    "file_size_bytes": 142850,
+    "hashes": {
+      "sha256": "4a7d3b8e91f0c2a5d8b7e6f3a2c1d0e9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f4e3",
+      "sha3_256": "8f3b2c1d0e9a7f6e5d4c3b2a1f0e9d8c7b6a5f4e34a7d3b8e91f0c2a5d8b7e6f"
+    },
+    "acquired_utc": "2026-10-18T22:30:00Z"
+  },
+  "findings": [
+    "Identified persistent encrypted C2 beaconing on port 8443 (Periodic interval: 10.0s, Jitter: 0.04s, MITRE T1071).",
+    "Extracted 3 unauthorized UPI VPA addresses used for financial extortion (Primary Hub: rajesh.mule@oksbi).",
+    "Correlated brute-force SSH logins from external IP 198.51.100.77 resulting in unauthorized bash privilege escalation.",
+    "Verified all acquisition cryptographic hashes; no evidence of bitstream alteration or file corruption."
+  ],
+  "affirmation": "I hereby certify that the electronic record described herein was produced by a computer system during the period over which the computer was used regularly to store or process information, and that throughout the material part of the said period, the computer was operating properly. The cryptographic hashes computed upon initial acquisition match the current artifact integrity."
+}
