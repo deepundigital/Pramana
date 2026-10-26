@@ -3,13 +3,16 @@ Sutra-Net API Server: FastAPI service powering the Sakshya-UI dashboard,
 interactive forensic triage, zero-copy Parquet analytics, and BSA Section 63 certificate generation.
 """
 
+import base64
+import binascii
+import hmac
 import os
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Literal
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from sutra_net.config import (
     PROJECT_ROOT,
@@ -37,6 +40,66 @@ app = FastAPI(
     version="1.0.0"
 )
 
+_AUTH_REALM = "Sutra-Net Forensics"
+
+
+@app.middleware("http")
+async def require_authentication(request, call_next):
+    """Require environment-configured HTTP Basic Authentication on every route."""
+
+    expected_username = os.environ.get("SUTRA_AUTH_USERNAME")
+    expected_password = os.environ.get("SUTRA_AUTH_PASSWORD")
+
+    # Fail closed: never silently run without configured credentials.
+    if not expected_username or not expected_password:
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "Server authentication is not configured."},
+        )
+
+    # Static assets contain no evidence or credentials.
+    # Keep all API endpoints protected by authentication.
+    if request.url.path.startswith("/static/"):
+        return await call_next(request)
+
+    def unauthorized():
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Authentication required."},
+            headers={
+                "WWW-Authenticate":
+                    f'Basic realm="{_AUTH_REALM}", charset="UTF-8"'
+            },
+        )
+
+    header = request.headers.get("authorization", "")
+    scheme, separator, encoded = header.partition(" ")
+
+    if scheme.lower() != "basic" or not separator or not encoded:
+        return unauthorized()
+
+    try:
+        decoded = base64.b64decode(encoded, validate=True).decode("utf-8")
+    except (binascii.Error, UnicodeDecodeError, ValueError):
+        return unauthorized()
+
+    if ":" not in decoded:
+        return unauthorized()
+
+    supplied_username, supplied_password = decoded.split(":", 1)
+    username_matches = hmac.compare_digest(
+        supplied_username, expected_username
+    )
+    password_matches = hmac.compare_digest(
+        supplied_password, expected_password
+    )
+
+    if not (username_matches and password_matches):
+        return unauthorized()
+
+    return await call_next(request)
+
+
 # Core Service Instances
 parquet_engine = ParquetEngine()
 query_engine = ForensicQueryEngine()
@@ -54,14 +117,25 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 class SQLQueryRequest(BaseModel):
-    query: str
+    model_config = ConfigDict(extra="forbid")
+
+    query_id: str = Field(min_length=1, max_length=64)
+    limit: int = Field(default=20, ge=1, le=100)
 
 
 class CertificateRequest(BaseModel):
-    case_id: str = "CASE-2026-SUTRAM-01"
-    examiner_name: str = "Inspector Rajesh Kumar (Cyber Cell)"
-    agency_name: str = "State Cyber Forensic Laboratory / MeitY SUTRAM"
-    artifact_name: str = "sample_network.pcap"
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    case_id: str = Field(
+        default="CASE-2026-SUTRAM-DEMO",
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$",
+    )
+    examiner_name: str = Field(min_length=1, max_length=120)
+    agency_name: str = Field(min_length=1, max_length=160)
+    artifact_name: Literal[
+        "sample_network.pcap",
+        "sample_msgstore.db",
+    ] = "sample_network.pcap"
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -195,59 +269,121 @@ async def get_knowledge_graph():
 
 @app.post("/api/query/sql")
 async def execute_sql_query(req: SQLQueryRequest):
-    """
-    Executes an arbitrary SQL query via DuckDB over the Parquet store.
-    """
-    result = query_engine.execute_sql(req.query)
-    return result
+    """Runs an approved, bounded forensic query."""
+    return query_engine.run_saved_query(req.query_id, req.limit)
 
 
 @app.post("/api/compliance/certificate")
 async def generate_certificate(req: CertificateRequest):
-    """
-    Generates a courtroom-ready Bharatiya Sakshya Adhiniyam (Sec 63) certificate (PDF & JSON).
-    """
-    # Sample evidence manifest
+    """Generate a certificate draft from a recorded, verified acquisition."""
+
+    sample_root = SAMPLE_DATA_DIR.resolve()
+    artifact_path = (sample_root / req.artifact_name).resolve()
+
+    # Only the explicitly supported sample evidence files are accepted.
+    if artifact_path.parent != sample_root or not artifact_path.is_file():
+        raise HTTPException(status_code=404, detail="Evidence artifact not found.")
+
+    # Require a prior acquisition record for this exact case and artifact.
+    records = audit_ledger.get_case_history(req.case_id)
+    acquisition = None
+
+    for record in records:
+        if record.get("filename") != req.artifact_name:
+            continue
+        if not record.get("file_path") or not record.get("hashes"):
+            continue
+        try:
+            recorded_path = Path(record["file_path"]).resolve()
+        except (OSError, TypeError, ValueError):
+            continue
+
+        if recorded_path == artifact_path and record.get("acquired_utc"):
+            acquisition = record
+            break
+
+    if acquisition is None:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "No matching acquisition record exists for this case and artifact. "
+                "Ingest the evidence first and use the corresponding case ID."
+            ),
+        )
+
+    try:
+        current_hashes = AcquisitionHasher.hash_file(artifact_path)
+    except OSError:
+        raise HTTPException(status_code=500, detail="Could not verify evidence integrity.")
+
+    recorded_hashes = acquisition["hashes"]
+    algorithms = ("sha256", "sha3_256")
+
+    if any(
+        not recorded_hashes.get(name)
+        or current_hashes.get(name) != recorded_hashes.get(name)
+        for name in algorithms
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="Evidence hash mismatch. Certificate generation was refused.",
+        )
+
     evidence_manifest = {
-        "filename": req.artifact_name,
-        "file_size_bytes": 142850,
-        "hashes": {
-            "sha256": "4a7d3b8e91f0c2a5d8b7e6f3a2c1d0e9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f4e3",
-            "sha3_256": "8f3b2c1d0e9a7f6e5d4c3b2a1f0e9d8c7b6a5f4e34a7d3b8e91f0c2a5d8b7e6f"
-        },
-        "acquired_utc": "2026-10-18T22:30:00Z"
+        "filename": artifact_path.name,
+        "file_size_bytes": artifact_path.stat().st_size,
+        "hashes": recorded_hashes,
+        "acquired_utc": acquisition["acquired_utc"],
+        "integrity_verified_at_generation": True,
+        "integrity_verified_hashes": current_hashes,
+        "acquisition_examiner": acquisition.get("examiner_name"),
     }
 
-    key_findings = [
-        "Identified persistent encrypted C2 beaconing on port 8443 (Periodic interval: 10.0s, Jitter: 0.04s, MITRE T1071).",
-        "Extracted 3 unauthorized UPI VPA addresses used for financial extortion (Primary Hub: rajesh.mule@oksbi).",
-        "Correlated brute-force SSH logins from external IP 198.51.100.77 resulting in unauthorized bash privilege escalation.",
-        "Verified all acquisition cryptographic hashes; no evidence of bitstream alteration or file corruption."
-    ]
-
+    # Do not insert fabricated findings into a forensic certificate.
     cert_paths = cert_generator.generate_certificate(
         case_id=req.case_id,
         evidence_manifest=evidence_manifest,
         examiner_name=req.examiner_name,
         agency_name=req.agency_name,
-        key_findings=key_findings
+        key_findings=[],
     )
 
     return {
         "status": "success",
-        "pdf_download_url": f"/api/compliance/download_pdf?path={Path(cert_paths['pdf_path']).name}",
-        "paths": cert_paths
+        "pdf_download_url": (
+            f"/api/compliance/download_pdf?path="
+            f"{Path(cert_paths['pdf_path']).name}"
+        ),
+        # Return names, not internal filesystem paths.
+        "paths": {
+            "pdf_path": Path(cert_paths["pdf_path"]).name,
+            "json_path": Path(cert_paths["json_path"]).name,
+        },
     }
 
 
 @app.get("/api/compliance/download_pdf")
 async def download_certificate_pdf(path: str):
-    """Downloads the generated Section 63 PDF certificate."""
-    full_path = CERTIFICATES_DIR / path
-    if full_path.exists():
-        return FileResponse(
-            full_path,
-            media_type="application/pdf",
-            filename=full_path.name
-        )
-    raise HTTPException(status_code=404, detail="Certificate file not found.")
+    """Download a PDF located directly in the certificate directory."""
+
+    base_dir = CERTIFICATES_DIR.resolve()
+
+    # Reject directory components, absolute paths and traversal attempts.
+    if not path or Path(path).name != path or path in {".", ".."}:
+        raise HTTPException(status_code=404, detail="Certificate file not found.")
+
+    full_path = (base_dir / path).resolve()
+
+    # Resolve symlinks before checking containment.
+    if (
+        full_path.parent != base_dir
+        or full_path.suffix.lower() != ".pdf"
+        or not full_path.is_file()
+    ):
+        raise HTTPException(status_code=404, detail="Certificate file not found.")
+
+    return FileResponse(
+        full_path,
+        media_type="application/pdf",
+        filename=full_path.name,
+    )

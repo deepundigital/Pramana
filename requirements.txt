@@ -16,3 +16,6 @@ uvicorn>=0.28.0
 pydantic>=2.6.0
 python-dateutil>=2.8.2
 lxml>=5.0.0
+
+# Required for FastAPI/Starlette test client
+httpx2>=2.0.0
