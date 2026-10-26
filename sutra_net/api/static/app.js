@@ -175,7 +175,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 5. Execute DuckDB SQL Query
   const btnRunSql = document.getElementById("btn-run-sql");
   btnRunSql.addEventListener("click", async () => {
-    const query = document.getElementById("sql-query-input").value;
+    const query_id = document.getElementById("sql-query-input").value;
     const labelTime = document.getElementById("query-exec-time");
     labelTime.innerText = "Executing...";
 
@@ -183,13 +183,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await fetch("/api/query/sql", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query })
+        body: JSON.stringify({ query_id, limit: 20 })
       });
       const data = await res.json();
 
-      if (!data.success) {
-        labelTime.innerText = `Error (${data.execution_ms} ms)`;
-        alert("Query failed: " + data.error);
+      if (!res.ok || !data.success) {
+        labelTime.innerText = "Query failed";
+        alert("Query failed: " + (data.error || data.detail || "Invalid request."));
         return;
       }
 

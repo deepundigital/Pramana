@@ -7,6 +7,8 @@ import json
 import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
+from xml.sax.saxutils import escape
+import re
 
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
@@ -37,6 +39,9 @@ class BSASection63Certificate:
         """
         Creates both a ReportLab PDF and structured JSON representation of the Section 63 certificate.
         """
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", case_id):
+            raise ValueError("Invalid case ID format.")
+
         timestamp_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         pdf_path = self.output_dir / f"BSA_Sec63_Certificate_{case_id}_{timestamp_str}.pdf"
         json_path = self.output_dir / f"BSA_Sec63_Certificate_{case_id}_{timestamp_str}.json"
@@ -119,9 +124,9 @@ class BSASection63Certificate:
 
         # Case & Agency Metadata
         meta_table_data = [
-            [Paragraph("Case Reference ID:", bold_label), Paragraph(case_id, body_style)],
-            [Paragraph("Investigating Agency:", bold_label), Paragraph(agency_name, body_style)],
-            [Paragraph("Certifying Examiner:", bold_label), Paragraph(examiner_name, body_style)],
+            [Paragraph("Case Reference ID:", bold_label), Paragraph(escape(str(case_id)), body_style)],
+            [Paragraph("Investigating Agency:", bold_label), Paragraph(escape(str(agency_name)), body_style)],
+            [Paragraph("Certifying Examiner:", bold_label), Paragraph(escape(str(examiner_name)), body_style)],
             [Paragraph("Certification Date (UTC):", bold_label), Paragraph(cert_data["generated_utc"], body_style)],
         ]
         meta_table = Table(meta_table_data, colWidths=[160, 360])
@@ -140,11 +145,11 @@ class BSASection63Certificate:
 
         hashes = evidence_manifest.get("hashes", {})
         evidence_table_data = [
-            [Paragraph("<b>Artifact Name</b>", bold_label), Paragraph(str(evidence_manifest.get("filename", "N/A")), body_style)],
+            [Paragraph("<b>Artifact Name</b>", bold_label), Paragraph(escape(str(evidence_manifest.get("filename", "N/A"))), body_style)],
             [Paragraph("<b>File Size</b>", bold_label), Paragraph(f"{evidence_manifest.get('file_size_bytes', 0):,} bytes", body_style)],
-            [Paragraph("<b>Acquisition SHA-256</b>", bold_label), Paragraph(f"<font face='Courier' size=8>{hashes.get('sha256', 'N/A')}</font>", body_style)],
-            [Paragraph("<b>Acquisition SHA-3</b>", bold_label), Paragraph(f"<font face='Courier' size=8>{hashes.get('sha3_256', 'N/A')}</font>", body_style)],
-            [Paragraph("<b>Acquisition Time</b>", bold_label), Paragraph(str(evidence_manifest.get("acquired_utc", "N/A")), body_style)],
+            [Paragraph("<b>Acquisition SHA-256</b>", bold_label), Paragraph(f"<font face='Courier' size=8>{escape(str(hashes.get('sha256', 'N/A')))}</font>", body_style)],
+            [Paragraph("<b>Acquisition SHA-3</b>", bold_label), Paragraph(f"<font face='Courier' size=8>{escape(str(hashes.get('sha3_256', 'N/A')))}</font>", body_style)],
+            [Paragraph("<b>Acquisition Time</b>", bold_label), Paragraph(escape(str(evidence_manifest.get("acquired_utc", "N/A"))), body_style)],
         ]
         ev_table = Table(evidence_table_data, colWidths=[160, 360])
         ev_table.setStyle(TableStyle([
@@ -160,7 +165,7 @@ class BSASection63Certificate:
         if key_findings:
             elements.append(Paragraph("<b>AUTOMATED FORENSIC FINDINGS & INDICATORS SUMMARY</b>", bold_label))
             elements.append(Spacer(1, 6))
-            findings_p = "<br/>".join([f"• {f}" for f in key_findings])
+            findings_p = "<br/>".join(f"• {escape(str(f))}" for f in key_findings)
             elements.append(Paragraph(findings_p, body_style))
             elements.append(Spacer(1, 14))
 
@@ -173,7 +178,7 @@ class BSASection63Certificate:
         # Signature Block
         sig_data = [
             [Paragraph("____________________________", body_style), Paragraph("____________________________", body_style)],
-            [Paragraph(f"<b>Signature of Certifying Officer</b><br/>{examiner_name}", body_style),
+            [Paragraph(f"<b>Signature of Certifying Officer</b><br/>{escape(str(examiner_name))}", body_style),
              Paragraph("<b>Digital Forensic Lab Seal & Date</b><br/>Verified by Sutra-Net Forensics", body_style)]
         ]
         sig_table = Table(sig_data, colWidths=[260, 260])

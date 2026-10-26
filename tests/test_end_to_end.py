@@ -10,6 +10,7 @@ Tests all 4 architectural layers:
 import unittest
 from pathlib import Path
 import os
+import tempfile
 import json
 
 from sutra_net.config import SAMPLE_DATA_DIR, DATA_DIR, CERTIFICATES_DIR
@@ -68,20 +69,30 @@ class TestSutraNetPipeline(unittest.TestCase):
         self.assertTrue(any("loan" in m["text"].lower() for m in messages))
 
     def test_04_parquet_storage_and_duckdb(self):
-        """Validates Layer 2 Parquet conversion and DuckDB SQL execution."""
+        """Validate Parquet queries using isolated temporary storage."""
         parser = PcapParser(self.pcap_file)
         flows = parser.parse()["flows"]
 
-        engine = ParquetEngine()
-        pq_path = engine.write_records(flows, "flows", case_id="TEST-CASE-01")
-        self.assertTrue(pq_path.exists())
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = Path(temp_dir)
 
-        # Test DuckDB zero-copy query
-        query_engine = ForensicQueryEngine()
-        res = query_engine.query_flows(limit=10)
-        self.assertTrue(res["success"])
-        self.assertGreater(res["row_count"], 0)
-        self.assertLess(res["execution_ms"], 500.0) # Sub-second check
+            engine = ParquetEngine(base_dir=store)
+            pq_path = engine.write_records(
+                flows, "flows", case_id="TEST-CASE-01"
+            )
+            self.assertTrue(pq_path.exists())
+
+            query_engine = ForensicQueryEngine(base_dir=store)
+            result = query_engine.query_flows(limit=10)
+
+            self.assertTrue(result["success"], result)
+            self.assertGreater(result["row_count"], 0)
+            self.assertLess(result["execution_ms"], 500.0)
+
+            # Confirm this test wrote exactly one temporary Parquet shard.
+            shards = list((store / "flows").glob("*.parquet"))
+            self.assertEqual(len(shards), 1)
+
 
     def test_05_netspectra_ml_triage(self):
         """Validates Layer 3A Encrypted C2 beacon detection."""

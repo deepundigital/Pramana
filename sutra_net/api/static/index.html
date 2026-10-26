@@ -61,7 +61,7 @@
       <header class="topbar">
         <div class="case-info">
           <span class="label">ACTIVE CASE:</span>
-          <span class="case-id">CASE-2026-SUTRAM-01</span>
+          <span class="case-id">CASE-2026-SUTRAM-DEMO</span>
           <span class="status-pill status-live">EVIDENCE VERIFIED</span>
         </div>
         <div class="top-actions">
@@ -217,10 +217,11 @@
             <span class="badge badge-cyan">Sub-Second Execution</span>
           </div>
           <div class="sql-input-box">
-            <textarea id="sql-query-input" rows="4" class="sql-editor">SELECT flow_id, total_bytes, duration_sec, mean_delta_sec, jitter_sec 
-FROM read_parquet('data/parquet_store/flows/*.parquet') 
-ORDER BY total_bytes DESC 
-LIMIT 20;</textarea>
+            <label for="sql-query-input">Approved forensic query</label>
+            <select id="sql-query-input" class="sql-editor">
+              <option value="top_flows">Largest network flows by bytes</option>
+              <option value="recent_flows">Most recent network flows</option>
+            </select>
             <div class="sql-actions mt-2">
               <button id="btn-run-sql" class="btn btn-primary">⚡ Execute Query</button>
               <span id="query-exec-time" class="exec-time-label">Ready</span>
@@ -250,7 +251,7 @@ LIMIT 20;</textarea>
             <div class="cert-form-grid">
               <div>
                 <label>Case Number:</label>
-                <input type="text" id="cert-case-id" class="input-field" value="CASE-2026-SUTRAM-01">
+                <input type="text" id="cert-case-id" class="input-field" value="CASE-2026-SUTRAM-DEMO">
               </div>
               <div>
                 <label>Certifying Examiner:</label>
