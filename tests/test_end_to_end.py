@@ -38,11 +38,13 @@ class TestSutraNetPipeline(unittest.TestCase):
 
     def test_01_acquisition_hasher(self):
         """Validates Layer 1 cryptographic hashing and ledger recording."""
-        record = AcquisitionHasher.register_artifact(
-            self.pcap_file,
-            case_id="TEST-CASE-01",
-            notes="Unit Test PCAP"
-        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            record = AcquisitionHasher.register_artifact(
+                self.pcap_file,
+                case_id="TEST-CASE-01",
+                notes="Unit Test PCAP",
+                ledger_path=Path(temp_dir) / "audit_ledger.jsonl",
+            )
         self.assertIn("sha256", record["hashes"])
         self.assertIn("sha3_256", record["hashes"])
         self.assertEqual(len(record["hashes"]["sha256"]), 64)

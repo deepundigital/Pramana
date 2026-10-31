@@ -12,7 +12,8 @@ import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional
 
-from sutra_net.config import AUDIT_LEDGER_PATH, HASH_ALGORITHMS
+from sutra_net.config import AUDIT_LEDGER_PATH
+from sutra_net.compliance.audit_ledger import ForensicAuditLedger
 
 
 class AcquisitionHasher:
@@ -47,7 +48,8 @@ class AcquisitionHasher:
         file_path: str | Path,
         case_id: str = "CASE-2026-SUTRAM",
         examiner_name: str = "Forensic Examiner",
-        notes: str = "Initial Evidence Ingestion"
+        notes: str = "Initial Evidence Ingestion",
+        ledger_path: str | Path | None = None,
     ) -> Dict[str, Any]:
         """
         Hashes file, logs acquisition entry to the immutable ledger, and returns the manifest record.
@@ -69,11 +71,11 @@ class AcquisitionHasher:
             "integrity_verified": True
         }
 
-        # Append to immutable audit ledger
-        with open(AUDIT_LEDGER_PATH, "a", encoding="utf-8") as ledger:
-            ledger.write(json.dumps(record) + "\n")
-
-        return record
+        # Append through the shared hash-chained ledger.
+        target_ledger = (
+            Path(ledger_path) if ledger_path is not None else AUDIT_LEDGER_PATH
+        )
+        return ForensicAuditLedger(target_ledger).append_record(record)
 
     @staticmethod
     def verify_integrity(file_path: str | Path, expected_sha256: str) -> bool:
